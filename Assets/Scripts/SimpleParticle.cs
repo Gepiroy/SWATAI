@@ -4,11 +4,11 @@ using UnityEngine;
 
 public class SimpleParticle : MonoBehaviour
 {
-    [SerializeField] public SpriteRenderer renderer;
+    [SerializeField] public SpriteRenderer Renderer;
     public double lifetime = 2;
     void Start()
     {
-        
+
     }
     
     void Update()

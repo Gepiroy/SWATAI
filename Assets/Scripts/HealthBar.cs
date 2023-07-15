@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class HealthBar : MonoBehaviour
 {
-    public void setProgress(float progress)
+    public void SetProgress(float progress)
     {
         Vector3 scale = transform.localScale;
         scale.x = progress;

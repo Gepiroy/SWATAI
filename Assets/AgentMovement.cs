@@ -5,14 +5,18 @@ using UnityEngine.AI;
 
 public class AgentMovement : MonoBehaviour
 {
-    private NavMeshAgent agent;
+    public delegate void NavTargetChanged(Vector3 newTarget);
+    public event NavTargetChanged OnNavTargetChanged;
+
+    private NavMeshAgent _agent;
+
     // Start is called before the first frame update
     void Start()
     {
-        agent = gameObject.AddComponent(typeof(NavMeshAgent)) as NavMeshAgent;
+        _agent = gameObject.AddComponent(typeof(NavMeshAgent)) as NavMeshAgent;
         //agent.speed= 1.0f;
-        agent.updateRotation = false;
-        agent.updateUpAxis = false;
+        _agent.updateRotation = false;
+        _agent.updateUpAxis = false;
     }
 
     // Update is called once per frame
@@ -21,22 +25,19 @@ public class AgentMovement : MonoBehaviour
         
     }
 
-    public void setNavTarget(Vector3 target)
+    public void SetNavTarget(Vector3 target)
     {
-        agent.SetDestination(target);
-        onNavTargetChanged?.Invoke(target);
+        _agent.SetDestination(target);
+        OnNavTargetChanged?.Invoke(target);
     }
 
-    public bool isMoving()
+    public bool IsMoving()
     {
-        return agent.hasPath;
+        return _agent.hasPath;
     }
 
-    public void setSpeed(float speed)
+    public void SetSpeed(float speed)
     {
-        agent.speed = speed;
+        _agent.speed = speed;
     }
-
-    public delegate void NavTargetChanged(Vector3 newTarget);
-    public event NavTargetChanged onNavTargetChanged;
 }

@@ -11,9 +11,9 @@ public static class Teams
         teams.Add(t);
     }
 
-    public static List<Team> teamEnemiesOf(Teamable teamable)
+    public static List<Team> teamEnemiesOf(ITeamable teamable)
     {
-        Team t = teamable.getTeam();
+        Team t = teamable.GetTeam();
         List<Team> ret = new();
         foreach(Team team in teams)
         {
@@ -21,12 +21,12 @@ public static class Teams
         }
         return ret;
     }
-    public static List<Unit> unitEnemiesOf(Teamable t)
+    public static List<Unit> unitEnemiesOf(ITeamable t)
     {
         List<Unit> ret = new();
         foreach (Team team in teamEnemiesOf(t))
         {
-            ret.AddRange(team.getUnits());
+            ret.AddRange(team.GetUnits());
         }
         return ret;
     }

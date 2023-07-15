@@ -1,23 +1,35 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Zenject;
 
 public class Bullet : MonoBehaviour
 {
-    [SerializeField] SimpleParticle particle;
+
+    [Inject] private ParticleSpawner _particleSpawner;
+    
     public Team team;
     float life = 2;
+    float height = 1.5f;
+    float _heightDirection=0;
+
     void Start()
     {
-        GetComponent<Rigidbody2D>().AddForce(transform.up * 10, ForceMode2D.Impulse);
+        GetComponent<Rigidbody2D>().AddForce(transform.up * 20, ForceMode2D.Impulse);
+        _heightDirection = Random.Range(-1f, 1f);
     }
-    
+
+    private void FixedUpdate()
+    {
+        height += _heightDirection*Time.fixedDeltaTime;
+    }
+
     void Update()
     {
         life -= Time.deltaTime;
         if (life <= 0)
         {
-            spawnParticle(Color.gray);
+            _particleSpawner.SpawnParticle(transform.position, Color.gray, 2f);
             Destroy(gameObject);
         }
     }
@@ -31,32 +43,26 @@ public class Bullet : MonoBehaviour
         var u = other.GetComponent<Unit>();
         if (u != null)
         {
-            if (u.getTeam() == team) return;
-            u.hurt(0.1f);
+            if (u.GetTeam() == team) return;
+            if (height > u.height) return;
+            u.Hurt(0.1f);
             destroyBullet();
             return;
         }
-        if (life > 1.9)//Баррикаду впритык легко простреливать
+
+        var barricade = other.GetComponent<Barricade>();
+
+        if (barricade!=null && height > 1)
         {
-            return;
-        }
-        if (other.GetComponent<Barricade>()&&Random.Range(0,2)==0)
-        {
-            spawnParticle(Color.cyan);
+            _particleSpawner.SpawnParticle(transform.position, Color.cyan, 2f);
             return;
         }
         destroyBullet();
     }
 
-    void spawnParticle(Color color)
-    {
-        var p = Instantiate(particle, transform.position, Quaternion.identity);
-        p.renderer.color = color;
-    }
-
     void destroyBullet()
     {
-        spawnParticle(Color.red);
+        _particleSpawner.SpawnParticle(transform.position, Color.red, 2f);
         Destroy(gameObject);
     }
 }

@@ -22,12 +22,12 @@ public class HidingPointInfo
         if(occupant != null) { occupantLeaved(Vector3.up); }
         occupant = unit;
         if (unit == null) return;
-        occupant.getNav().onNavTargetChanged += occupantLeaved;
+        occupant.GetNav().OnNavTargetChanged += occupantLeaved;
     }
 
     void occupantLeaved(Vector3 v)
     {
-        occupant.getNav().onNavTargetChanged -= occupantLeaved;
+        occupant.GetNav().OnNavTargetChanged -= occupantLeaved;
         occupant = null;
     }
 }

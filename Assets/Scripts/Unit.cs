@@ -4,53 +4,60 @@ using UnityEngine;
 using UnityEngine.AI;
 using static UnityEngine.GraphicsBuffer;
 
-public class Unit : MonoBehaviour, Teamable
+public class Unit : MonoBehaviour, ITeamable
 {
     [SerializeField] SpriteRenderer body;
-    [SerializeField] Shooting gun;
+    [SerializeField] Weapon gun;
     [SerializeField] HealthBar healthBar;
     public float health = 1.0f;
+    public float height = 2.0f;
     void Start()
     {
-        body.color=getTeam().color;
+        body.color=GetTeam().color;
+        var act = ScriptableObject.CreateInstance<ActionShootFromCover>();
     }
 
-    Unit target;
+    private Unit aimingTarget;
     
+    private Action _action;
+
     void Update()
     {
-        //if (getNav().velocity.magnitude==0)
+        
+    }
+
+    void FixedUpdate()
+    {
+        //if (!GetNav().IsMoving())
         {
-            target = closestEnemy();
-            
+            SetAimingTarget(ClosestEnemy());
             if (Random.Range(0, 100) == 1)
             {
-                shoot(target.transform.position);
+                ShootAtTarget();
             }
             if (Random.Range(0, 1000) == 1)
             {
-                aim();
+                SetAiming(!IsAiming);
             }
-
             if (Random.Range(0, 1000) == 1)
             {
-                var hide = findBestHidingPoint();
-                getNav().setNavTarget(hide.point.transform.position);
+                SetCrouching(!IsCrouching);
+            }
+            if (Random.Range(0, 1000) == 1)
+            {
+                var hide = FindBestHidingPoint();
+                GetNav().SetNavTarget(hide.point.transform.position);
                 hide.setOccupant(this);
             }
         }
-        if (Input.GetMouseButtonUp(0))
-        {
-            var pos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            getNav().setNavTarget(pos);
-        }
     }
 
-    HidingPointInfo findBestHidingPoint()
+    HidingPointInfo FindBestHidingPoint()
     {
-        HidingPointInfo bestPoint = null;
+        return GetTeam().hidingPoints[Random.Range(0, GetTeam().hidingPoints.Count)];
+        /*HidingPointInfo bestPoint = null;
         double minDist = 10000;
-        foreach (HidingPointInfo hpi in getTeam().hidingPoints)
+        foreach (HidingPointInfo hpi in GetTeam().hidingPoints)
         {
             if (hpi.occupant != null) continue;
             double dist = Vector3.Distance(hpi.point.transform.position, transform.position);
@@ -60,77 +67,114 @@ public class Unit : MonoBehaviour, Teamable
                 bestPoint = hpi;
             }
         }
-        return bestPoint;
+        return bestPoint;*/
     }
 
-    void shoot(Vector3 target)
+    void ShootAtTarget()
     {
-        var dir = target- transform.position;
-        float rot = Mathf.Atan2(-dir.x, dir.y) * Mathf.Rad2Deg;
-        body.transform.rotation = Quaternion.identity;
-        body.transform.Rotate(0, 0, rot);
-        float recoil = 5;
-        if (isMoving()) recoil *= 2;
-        if (isAiming) recoil /= 2;
-        gun.tryShoot(target, recoil);
+        ShootToPoint(aimingTarget.transform.position);
     }
 
-    Unit closestEnemy()
+    void LookAtTarget(Vector3 target)
+    {
+        //Вектор направления
+        var dir = target - transform.position;
+        //Из него берём радиан 2д-шный
+        float rot = Mathf.Atan2(-dir.x, dir.y) * Mathf.Rad2Deg;
+        //Обнуляем положение взгляда
+        body.transform.rotation = Quaternion.identity;
+        //Поворачиваем чела на эти радианы
+        body.transform.Rotate(0, 0, rot);
+    }
+
+    void ShootToPoint(Vector3 point)
+    {
+        LookAtTarget(point);
+
+        float spread = 1;
+        if (IsMoving()) spread *= 2;
+        if (IsAiming) spread /= 2;
+        gun.tryShoot(point, spread);
+    }
+
+    Unit ClosestEnemy()
     {
         var enemies = Teams.unitEnemiesOf(this);
         enemies.Sort((a, b) => { return Vector3.Distance(a.transform.position, transform.position) > Vector3.Distance(b.transform.position, transform.position)?1:-1; });
         return enemies[0];
     }
 
-    public bool isMoving()
+    public bool IsMoving()
     {
-        return getNav().isMoving();
+        return GetNav().IsMoving();
     }
 
-    public void aim()
+    public void SetAimingTarget(Unit target)
     {
-        isAiming = !isAiming;
+        aimingTarget = target;
+    }
+
+    public bool IsAiming { get; private set; } = false;
+
+    public void SetAiming(bool toSet)
+    {
+        IsAiming = toSet;
         Vector3 pos = gun.transform.localPosition;
-        if (isAiming)
+        if (IsAiming)
         {
             pos.x = 0;
             pos.y = 0.5f;
-            gun.transform.localPosition = pos;
         }
         else
         {
             pos.x = 0.37f;
             pos.y = 0.38f;
-            gun.transform.localPosition = pos;
         }
-        updateSpeed();
+        gun.transform.localPosition = pos;
+        UpdateSpeed();
     }
 
-    public void updateSpeed()
+    public bool IsCrouching { get; private set; } = false;
+
+    public void SetCrouching(bool toSet)
+    {
+        IsCrouching = toSet;
+        var renderer = body.GetComponent<SpriteRenderer>();
+        var color = renderer.color;
+        color.a = IsCrouching ? 0.5f : 1f;
+        renderer.color = color;
+        UpdateSpeed();
+    }
+
+    public void UpdateSpeed()
     {
         float speed = 5f;
-        if (isAiming) speed/=2;
-        getNav().setSpeed(speed);
+        if (IsAiming) speed /= 2;
+        if (IsCrouching) speed /= 2;
+        GetNav().SetSpeed(speed);
     }
 
-    public bool isAiming { get; private set; } = false;
-
-    public Team getTeam()
+    public Team GetTeam()
     {
         return transform.parent.parent.GetComponent<Team>();
     }
-    public AgentMovement getNav()
+    public AgentMovement GetNav()
     {
         return GetComponent<AgentMovement>();
     }
 
-    public void hurt(float damage)
+    public void Hurt(float damage)
     {
-        health -= damage;
-        healthBar.setProgress(health);
+        AddHealth(-damage);
         if (health <= 0)
         {
-            Destroy(gameObject);
+            AddHealth(1);
+            //Destroy(gameObject);
         }
+    }
+    public void AddHealth(float toAdd)
+    {
+        health += toAdd;
+        healthBar.SetProgress(health);
     }
 }

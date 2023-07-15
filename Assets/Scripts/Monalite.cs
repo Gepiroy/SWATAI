@@ -2,11 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public interface Teamable
+public interface ITeamable
 {
-    public Team getTeam();
+    public Team GetTeam();
 }
-public interface UnitHolder
+public interface IUnitHolder
 {
-    public List<Unit> getUnits();
+    public List<Unit> GetUnits();
 }

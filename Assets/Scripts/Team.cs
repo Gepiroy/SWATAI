@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Team : MonoBehaviour, Teamable, UnitHolder
+public class Team : MonoBehaviour, ITeamable, IUnitHolder
 {
     public List<HidingPointInfo> hidingPoints { get; } = new();
     [SerializeField] public Color color = Color.white;
@@ -20,7 +20,7 @@ public class Team : MonoBehaviour, Teamable, UnitHolder
         
     }
 
-    public Team getTeam()
+    public Team GetTeam()
     {
         return this;
     }
@@ -30,12 +30,12 @@ public class Team : MonoBehaviour, Teamable, UnitHolder
         return GetComponentsInChildren<Group>();
     }
 
-    public List<Unit> getUnits()
+    public List<Unit> GetUnits()
     {
         List<Unit> ret = new List<Unit>();
         foreach (Group g in getGroups())
         {
-            ret.AddRange(g.getUnits());
+            ret.AddRange(g.GetUnits());
         }
         return ret;
     }
